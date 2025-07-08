@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Consulta con IA</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Consultas IA</h1>
+        <div class="chat-box" id="chatBox">
+            <div class="message ia-message">
+                <p>Hola, ¿en qué puedo ayudarte hoy?</p>
+            </div>
+        </div>
+        <form id="chatForm">
+            <input type="text" id="userMessage" placeholder="Escribe tu pregunta aquí..." required>
+            <button type="submit">Enviar</button>
+        </form>
+        <div id="loading" class="hidden">Pensando...</div>
+    </div>
+
+    <script>
+        const chatForm = document.getElementById('chatForm');
+        const userMessageInput = document.getElementById('userMessage');
+        const chatBox = document.getElementById('chatBox');
+        const loadingDiv = document.getElementById('loading');
+
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // Previene la recarga de la página
+
+            const userQuestion = userMessageInput.value.trim();
+            if (!userQuestion) return;
+
+            // Muestra el mensaje del usuario
+            addMessageToChatBox(userQuestion, 'user-message');
+            userMessageInput.value = ''; // Limpia el input
+
+            loadingDiv.classList.remove('hidden'); // Muestra el indicador de carga
+
+            try {
+                const response = await fetch('/ask_ai', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ question: userQuestion }),
+                });
+
+                const data = await response.json();
+                addMessageToChatBox(data.response, 'ia-message');
+            } catch (error) {
+                console.error('Error:', error);
+                addMessageToChatBox('Lo siento, hubo un error al conectar con la IA.', 'ia-message');
+            } finally {
+                loadingDiv.classList.add('hidden'); // Oculta el indicador de carga
+                chatBox.scrollTop = chatBox.scrollHeight; // Desplaza al final
+            }
+        });
+
+        function addMessageToChatBox(message, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', type);
+            const paragraph = document.createElement('p');
+            paragraph.textContent = message;
+            messageDiv.appendChild(paragraph);
+            chatBox.appendChild(messageDiv);
+        }
+    </script>
+</body>
+</html>
